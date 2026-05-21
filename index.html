@@ -457,7 +457,7 @@ function StepScreen({ screen, onPick }) {
     <div style={{ flex:1, display:'flex', flexDirection:'column' }}>
       <BigTitle title={screen.title} desc={screen.instruct} />
       <div style={{ flex:1, minHeight:4 }} />
-      <ArtBlock kind={screen.art} goTo={goTo} />
+      <ArtBlock kind={screen.art} goTo={onPick} />
       {screen.showRoles && <RolesCard />}
 
       {/* 1. noteBullets: 박스 추가 */}
