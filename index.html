@@ -300,23 +300,23 @@ function LocationRowButton({ onClick }) {
       onMouseDown={()=>setPrs(true)} onMouseUp={()=>setPrs(false)}
       onTouchStart={()=>setPrs(true)} onTouchEnd={()=>{setPrs(false);setHov(false);}}
       style={{
-        marginTop:10, width:'100%', cursor:'pointer',
-        padding:'13px 14px',
+        marginTop:8, width:'100%', cursor:'pointer',
+        padding:'10px 12px',
         background: prs?'#E5E7EA':hov?'#EAEBEC':C.bgSurfaceSecondary,
         border:'none',
         borderRadius:C.rMd,
-        display:'flex', alignItems:'center', gap:10,
+        display:'flex', alignItems:'center', gap:8,
         transition:'background .12s ease',
         WebkitTapHighlightColor:'transparent',
       }}>
-      <div style={{ width:28, height:28, borderRadius:C.rSm, flexShrink:0, background:C.bgPrimarySoft, color:C.textBrand, display:'inline-flex', alignItems:'center', justifyContent:'center' }}>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+      <div style={{ width:24, height:24, borderRadius:C.rSm, flexShrink:0, background:C.bgPrimarySoft, color:C.textBrand, display:'inline-flex', alignItems:'center', justifyContent:'center' }}>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
           <path d="M12 22s7-7.5 7-12a7 7 0 1 0-14 0c0 4.5 7 12 7 12Z" stroke="currentColor" strokeWidth="1.8"/>
           <circle cx="12" cy="10" r="2.4" stroke="currentColor" strokeWidth="1.8"/>
         </svg>
       </div>
-      <span style={{ flex:1, fontSize:14, fontWeight:600, color:C.textPrimary, textAlign:'left', letterSpacing:'-0.01em' }}>플랩 스타디움 AED 비치 위치</span>
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+      <span style={{ flex:1, fontSize:13.5, fontWeight:400, color:C.textPrimary, textAlign:'left', letterSpacing:'-0.01em' }}>플랩 스타디움 AED 비치 위치</span>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
         <path d="M9 6l6 6-6 6" stroke={C.textTertiary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
       </svg>
     </button>
@@ -333,11 +333,11 @@ function IntroScreen({ screen, onOpenLocations, onAdvance }) {
           {
             n:'1', title:'119에 즉시 신고',
             /* ② 문구 수정 */
-            body: <>반응·호흡이 없으면 <b style={{color:C.textPrimary}}>가장 먼저 119</b>에 신고하고 안내에 따라 주세요.</>,
+            body: <>반응·호흡이 없으면 <b style={{color:C.textPrimary}}>가장 먼저 119</b>에 신고하고 안내에 따라주세요.</>,
             action: (
               <div style={{marginTop:10}}>
                 <Button as="a" href="tel:119" btnStyle="danger-solid" size="sm"
-                  style={{borderRadius:C.rFull, height:36, padding:'0 14px'}}
+                  style={{borderRadius:C.rFull, height:36, padding:'0 14px', textDecoration:'none'}}
                   leftIcon={<svg width="14" height="14" viewBox="0 0 24 24"><path d="M5 4h3l2 5-2 1a11 11 0 0 0 6 6l1-2 5 2v3a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2Z" fill="#fff"/></svg>}
                   rightIcon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
               >119에 전화 걸기</Button>
@@ -346,7 +346,7 @@ function IntroScreen({ screen, onOpenLocations, onAdvance }) {
           },
           {
             n:'2', title:'심폐소생술 시작',
-            body: <>가슴 가운데를 깊고 빠르게 누르세요. 인공호흡이 어려우면 <b style={{color:C.textPrimary}}>가슴압박만</b> 계속해도 돼요.</>,
+            body: <>가슴 가운데를 깊고 빠르게 누르세요. 인공호흡이 어려우면 <b style={{color:C.textPrimary}}>가슴 압박만</b> 계속해도 돼요.</>,
             action: (
               <div style={{marginTop:10, display:'flex', alignItems:'baseline', gap:10, fontSize:13, color:C.textSecondary}}>
                 {[['깊이','5cm'],['속도','100–120회/분'],['비율','30:2']].map(([l,v], i, a) => (
@@ -361,7 +361,7 @@ function IntroScreen({ screen, onOpenLocations, onAdvance }) {
           },
           {
             n:'3', title:'자동심장충격기(AED) 사용',
-            body: <>전기 충격으로 멈춘 심장의 리듬을 되돌리는 응급 의료기기예요.</>,
+            body: <>전기 충격으로 멈춘 심장의 리듬을 되돌리는 응급 의료 기기예요.</>,
             last: true,
           },
         ].map(({ n, title, body, action, last }) => (
@@ -399,14 +399,14 @@ function IntroScreen({ screen, onOpenLocations, onAdvance }) {
 
 /* ─── Locations ──────────────────────────────────────────────── */
 const STADIUM_AED = [
-  { name:'플랩 스타디움 수원',                loc:'실내구장 화장실 및 자판기 옆' },
-  { name:'플랩 스타디움 여주',                loc:'사무실 컨테이너 내부' },
-  { name:'플랩 스타디움 가산 마리오',          loc:'엘리베이터 측 경기장 출입구 실내 공간' },
-  { name:'플랩 스타디움 안산 고잔',            loc:'옥상층 출입문 앞 창고 내부' },
-  { name:'플랩 스타디움 구미',                loc:'실내 사무 공간(장비 보관 장소) 앞' },
   { name:'플랩 스타디움 가산 디지털엠파이어',   loc:'1구장 측 옥상 계단 출입구 실내 공간' },
-  { name:'플랩 스타디움 인천 남동',            loc:'경기장 옆 엘리베이터실 내부' },
+  { name:'플랩 스타디움 가산 마리오',          loc:'엘리베이터 측 경기장 출입구 실내 공간' },
   { name:'플랩 스타디움 가산 코오롱테크노밸리',  loc:'블랙구장 출입구 앞' },
+  { name:'플랩 스타디움 구미',                loc:'실내 사무 공간(장비 보관 장소) 앞' },
+  { name:'플랩 스타디움 수원',                loc:'실내구장 화장실 및 자판기 옆' },
+  { name:'플랩 스타디움 안산 고잔',            loc:'옥상층 출입문 앞 창고 내부' },
+  { name:'플랩 스타디움 여주',                loc:'사무실 컨테이너 내부' },
+  { name:'플랩 스타디움 인천 남동',            loc:'경기장 옆 엘리베이터실 내부' },
 ];
 
 function LocationsScreen() {
@@ -460,8 +460,8 @@ function StepScreen({ screen, onPick }) {
         <div style={{ margin:'10px 0 0', display:'flex', gap:8, alignItems:'flex-start' }}>
           <div style={{ flexShrink:0, marginTop:2, width:16, height:16, borderRadius:'50%', background:C.bgPrimarySoft, color:C.textBrand, display:'inline-flex', alignItems:'center', justifyContent:'center', fontSize:10, fontWeight:900 }}>i</div>
           <div style={{ flex:1, fontSize:14, lineHeight:1.55, color:C.textSecondary }}>
-            <span style={{ fontWeight:700, color:C.textPrimary }}>여성 환자라면 </span>
-            브래지어를 풀거나 벗기지 않고 위치만 조정한 뒤, 가슴 조직을 피해 <b style={{color:C.textPrimary}}>맨 가슴</b>에 패드를 붙이세요.
+            <span style={{ fontWeight:600, color:C.textPrimary }}>여성 환자라면 </span>
+            브래지어를 풀거나 벗기지 않고 위치만 조정한 뒤, 가슴 조직을 피해 <span style={{color:C.textPrimary}}>맨 가슴</span>에 패드를 붙이세요.
           </div>
         </div>
       )}
@@ -481,7 +481,7 @@ function StepScreen({ screen, onPick }) {
           </div>
           {screen.warn && <div style={{ marginTop:8, fontSize:13.5, color:C.textPrimary, lineHeight:1.5 }}>{screen.warn}</div>}
           {screen.shoutLine && (
-            <div style={{ marginTop:10, padding:'10px 14px', borderRadius:C.rMd, background:C.textError, color:'#fff', fontSize:15, fontWeight:800, display:'flex', alignItems:'center', gap:10 }}>
+            <div style={{ marginTop:10, padding:'10px 14px', borderRadius:C.rMd, background:C.textError, color:'#fff', fontSize:15, fontWeight:400, display:'flex', alignItems:'center', gap:10 }}>
               <svg width="18" height="18" viewBox="0 0 24 24"><path d="M3 10v4h4l5 4V6L7 10H3Z" fill="#fff"/><path d="M16 8c2 2 2 6 0 8" stroke="#fff" strokeWidth="2" strokeLinecap="round" fill="none"/></svg>
               큰 소리로 {screen.shoutLine}
             </div>
@@ -570,20 +570,19 @@ function DeviceFigure({ highlight, pulse }) {
 
 function PadFigure() {
   return (
-    <svg width="220" height="260" viewBox="-5 -10 210 245">
+    <svg width="220" height="270" viewBox="-5 -30 210 265">
       <path d="M40 30c10-12 30-18 60-18s50 6 60 18l-8 14c20 4 32 16 32 36v110c0 16-14 28-30 28H46c-16 0-30-12-30-28V80c0-20 12-32 32-36Z" fill="#FFE8E5" stroke={C.textError} strokeWidth="2"/>
       <rect x="40" y="64" width="44" height="34" rx="6" fill={C.textError}/>
       <text x="62" y="87" textAnchor="middle" fontSize="20" fontWeight="800" fill="#fff" fontFamily="'Pretendard Variable',Pretendard,sans-serif">1</text>
       <rect x="116" y="128" width="44" height="34" rx="6" fill={C.textError}/>
       <text x="138" y="151" textAnchor="middle" fontSize="20" fontWeight="800" fill="#fff" fontFamily="'Pretendard Variable',Pretendard,sans-serif">2</text>
       <g stroke={C.textError} strokeWidth="1.6" fill="none" strokeDasharray="3 3">
-        <path d="M62 64 L62 28"/><path d="M138 162 L138 196"/>
+        <path d="M62 64 L62 18"/><path d="M138 162 L138 200"/>
       </g>
-      {/* 오른쪽 가슴: 두 줄로 나눠 테두리 밖에 배치 */}
-      <text x="62" y="16" textAnchor="middle" fontSize="10" fontWeight="800" fill={C.textError} fontFamily="'Pretendard Variable',Pretendard,sans-serif">오른쪽 가슴</text>
-      <text x="62" y="27" textAnchor="middle" fontSize="10" fontWeight="800" fill={C.textError} fontFamily="'Pretendard Variable',Pretendard,sans-serif">위쪽</text>
-      {/* 왼쪽 옆구리: 아래로 내려서 여백 확보 */}
-      <text x="138" y="210" textAnchor="middle" fontSize="10" fontWeight="800" fill={C.textError} fontFamily="'Pretendard Variable',Pretendard,sans-serif">왼쪽 옆구리</text>
+      {/* ① 오른쪽 가슴 위쪽: 선 끝에서 충분히 위로 — 그림 테두리(y≈12) 위 */}
+      <text x="62" y="-2" textAnchor="middle" fontSize="10.5" fontWeight="700" fill={C.textError} fontFamily="'Pretendard Variable',Pretendard,sans-serif">오른쪽 가슴 위쪽</text>
+      {/* 왼쪽 옆구리 */}
+      <text x="138" y="216" textAnchor="middle" fontSize="10.5" fontWeight="700" fill={C.textError} fontFamily="'Pretendard Variable',Pretendard,sans-serif">왼쪽 옆구리</text>
     </svg>
   );
 }
