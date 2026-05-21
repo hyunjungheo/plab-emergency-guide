@@ -363,7 +363,7 @@ function IntroScreen({ screen, onOpenLocations, onAdvance }) {
           },
           {
             n:'2', title:'심폐소생술 시작',
-            body: <>가슴 가운데를 깊고 빠르게 누르세요.</>,
+            body: <>가슴뼈 아래 1/2 중앙에 깍지 낀 두 손을 올리고, 몸과 수직이 되도록 5cm 이상 깊이로 빠르게 누르세요.</>,
             action: (
               <div style={{marginTop:10, display:'flex', alignItems:'baseline', gap:10, fontSize:13, color:C.textSecondary}}>
                 {[['깊이','5cm'],['속도','100–120회/분']].map(([l,v], i, a) => (
@@ -627,59 +627,59 @@ function CPRFigure({ goTo }) {
   const reset = () => { setRunning(false); setSet(1); setRem(DURATION); setDone(false); };
   const mm = String(Math.floor(rem/60)).padStart(1,'0');
   const ss = String(rem%60).padStart(2,'0');
-  const R=52, CIRC=2*Math.PI*R, prog=(DURATION-rem)/DURATION;
+  const R=62, CIRC=2*Math.PI*R, prog=(DURATION-rem)/DURATION;
 
   return (
     <div style={{ width:'100%', display:'flex', flexDirection:'column', gap:10 }}>
 
-      {/* ── 타이머 박스 ── */}
-      <div style={{ padding:'12px 14px', borderRadius:C.rLg, background:C.errorSoft, display:'flex', alignItems:'center', gap:14 }}>
+      {/* ── 타이머 박스 — 세로 레이아웃 ── */}
+      <div style={{ padding:'14px 16px', borderRadius:C.rLg, background:C.errorSoft, display:'flex', flexDirection:'column', alignItems:'center', gap:10 }}>
 
-        {/* 원형 타이머 — 소형 */}
-        <div style={{ position:'relative', width:116, height:116, flexShrink:0 }}>
-          <svg width="116" height="116" viewBox="0 0 124 124" style={{ transform:'rotate(-90deg)' }}>
-            <circle cx="62" cy="62" r={R} stroke={C.bgSurface} strokeWidth="8" fill="none"/>
-            <circle cx="62" cy="62" r={R} stroke={C.textError} strokeWidth="8" fill="none"
+        {/* 세트 인디케이터 */}
+        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+          <div style={{ display:'flex', gap:5 }}>
+            {Array.from({length:TOTAL}).map((_,i) => (
+              <div key={i} style={{ width:done||i<set?16:6, height:5, borderRadius:C.rFull, background:done||i<set?C.textError:'rgba(255,64,41,.2)', transition:'all .3s' }}/>
+            ))}
+          </div>
+          <span style={{ fontSize:11, fontWeight:700, color:C.textError, letterSpacing:'.04em' }}>
+            {done ? `${TOTAL}세트 완료` : `${set} / ${TOTAL}세트`}
+          </span>
+        </div>
+
+        {/* 원형 타이머 */}
+        <div style={{ position:'relative', width:140, height:140 }}>
+          <svg width="140" height="140" viewBox="0 0 148 148" style={{ transform:'rotate(-90deg)' }}>
+            <circle cx="74" cy="74" r={R} stroke={C.bgSurface} strokeWidth="9" fill="none"/>
+            <circle cx="74" cy="74" r={R} stroke={C.textError} strokeWidth="9" fill="none"
               strokeLinecap="round" strokeDasharray={CIRC} strokeDashoffset={CIRC*(1-prog)}
               style={{ transition:running?'stroke-dashoffset 1s linear':'none' }}/>
           </svg>
           <div style={{ position:'absolute', inset:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:1 }}>
-            <div style={{ fontSize:30, fontWeight:900, color:C.textError, letterSpacing:'-0.04em', lineHeight:1, fontVariantNumeric:'tabular-nums' }}>{mm}:{ss}</div>
-            <div style={{ fontSize:10, color:C.textSecondary, fontWeight:600 }}>
+            <div style={{ fontSize:36, fontWeight:900, color:C.textError, letterSpacing:'-0.04em', lineHeight:1, fontVariantNumeric:'tabular-nums' }}>{mm}:{ss}</div>
+            <div style={{ fontSize:10.5, color:C.textSecondary, fontWeight:600 }}>
               {done ? '완료' : running ? '진행 중' : '대기 중'}
             </div>
           </div>
         </div>
 
-        {/* 우측: 세트 + 수치 + 버튼 */}
-        <div style={{ flex:1, display:'flex', flexDirection:'column', gap:8 }}>
+        {/* 수치 카드 */}
+        <div style={{ width:'100%', display:'grid', gridTemplateColumns:'1fr 1fr 1.6fr', gap:5, textAlign:'center' }}>
+          {[['압박','30회'],['깊이','5cm'],['속도','100-120회/분']].map(([l,v]) => (
+            <div key={l} style={{ padding:'6px 4px', borderRadius:C.rSm, background:C.bgSurface, display:'flex', flexDirection:'column', gap:1, alignItems:'center' }}>
+              <span style={{ fontSize:10, color:C.textTertiary, fontWeight:600, whiteSpace:'nowrap' }}>{l}</span>
+              <span style={{ fontSize:12, color:C.textPrimary, fontWeight:700, letterSpacing:'-0.01em', whiteSpace:'nowrap' }}>{v}</span>
+            </div>
+          ))}
+        </div>
 
-          {/* 세트 */}
-          <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-            {Array.from({length:TOTAL}).map((_,i) => (
-              <div key={i} style={{ width:done||i<set?16:6, height:5, borderRadius:C.rFull, background:done||i<set?C.textError:'rgba(255,64,41,.2)', transition:'all .3s' }}/>
-            ))}
-            <span style={{ fontSize:11, fontWeight:700, color:C.textError, letterSpacing:'.04em' }}>
-              {done ? `${TOTAL}세트 완료` : `${set} / ${TOTAL}세트`}
-            </span>
-          </div>
-
-          {/* 수치 카드 — 가로 배치 */}
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1.6fr', gap:4 }}>
-            {[['압박','30회'],['깊이','5cm'],['속도','100-120회/분']].map(([l,v]) => (
-              <div key={l} style={{ padding:'5px 6px', borderRadius:C.rSm, background:C.bgSurface, display:'flex', flexDirection:'column', gap:1, alignItems:'center' }}>
-                <span style={{ fontSize:9.5, color:C.textTertiary, fontWeight:600, whiteSpace:'nowrap' }}>{l}</span>
-                <span style={{ fontSize:11.5, color:C.textPrimary, fontWeight:700, letterSpacing:'-0.01em', whiteSpace:'nowrap' }}>{v}</span>
-              </div>
-            ))}
-          </div>
-
-          {/* 타이머 버튼 */}
+        {/* 타이머 버튼 */}
+        <div style={{ width:'100%' }}>
           {!running && !done && (
             <button onClick={start} style={{
-              width:'100%', height:38, borderRadius:C.rMd, border:'none', cursor:'pointer',
+              width:'100%', height:40, borderRadius:C.rMd, border:'none', cursor:'pointer',
               background:C.bgSurface, color:C.textError,
-              fontSize:13, fontWeight:600, letterSpacing:'-0.01em',
+              fontSize:14, fontWeight:600, letterSpacing:'-0.01em',
               display:'inline-flex', alignItems:'center', justifyContent:'center', gap:6,
               fontFamily:'inherit', transition:'background .12s', WebkitTapHighlightColor:'transparent',
             }}
@@ -689,7 +689,7 @@ function CPRFigure({ goTo }) {
               onTouchEnd={e=>e.currentTarget.style.background=C.bgSurface}
             >
               타이머 시작
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke={C.textError} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke={C.textError} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
             </button>
           )}
           {running && (
@@ -705,11 +705,12 @@ function CPRFigure({ goTo }) {
             >다시 시작</Button>
           )}
         </div>
+
       </div>
 
       {/* ── 반복 안내 박스 ── */}
-      <div style={{ padding:'11px 13px', borderRadius:C.rMd, background:C.bgSurfaceSecondary, display:'flex', alignItems:'flex-start', gap:9 }}>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ flexShrink:0, marginTop:1 }}>
+      <div style={{ padding:'10px 13px', borderRadius:C.rMd, background:C.bgSurfaceSecondary, display:'flex', alignItems:'flex-start', gap:8 }}>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" style={{ flexShrink:0, marginTop:1 }}>
           <path d="M17 2l4 4-4 4" stroke={C.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           <path d="M3 11V9a4 4 0 0 1 4-4h14" stroke={C.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           <path d="M7 22l-4-4 4-4" stroke={C.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -731,13 +732,12 @@ function CPRFigure({ goTo }) {
     </div>
   );
 }
-
 function RolesCard() {
   return (
     <div style={{ marginTop:12, padding:'14px', borderRadius:C.rMd, background:C.bgSurfaceSecondary }}>
       {/* 타이틀: fontSize:14 — BigTitle desc와 통일 */}
       <div style={{ fontSize:14, fontWeight:800, color:C.textError, letterSpacing:'.06em', marginBottom:8 }}>
-        역할 분담 <span style={{ fontSize:11.5, color:C.textTertiary, fontWeight:400, letterSpacing:0 }}>"검은 옷 입으신 분"처럼 콕 집어 부탁하세요</span>
+        역할 분담 <span style={{ fontSize:11.5, color:C.textSecondary, fontWeight:400, letterSpacing:0 }}>"검은 옷 입으신 분"처럼 콕 집어 부탁하세요</span>
       </div>
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
         {['심폐소생술 주도','119 신고','AED 확보','주변 공간 확보'].map((r, i) => (
