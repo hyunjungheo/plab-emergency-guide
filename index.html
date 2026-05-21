@@ -13,7 +13,8 @@
     color:#111; -webkit-font-smoothing:antialiased;
   }
   *, *::before, *::after { box-sizing: border-box; }
-  button { font-family:inherit; }
+  button { font-family:inherit; -webkit-tap-highlight-color:transparent; }
+  a { -webkit-tap-highlight-color:transparent; }
 
   /* ── 모바일: full-screen ─────────────────────────── */
   #root {
@@ -140,10 +141,18 @@ function Button({ children, btnStyle='tertiary', size='lg', onClick, style, left
   const st  = disabled ? map.ds : prs ? map.pr : hov ? map.hv : map.en;
 
   const evts = disabled ? {} : {
-    onMouseEnter: () => setHov(true),
-    onMouseLeave: () => { setHov(false); setPrs(false); },
-    onMouseDown:  () => setPrs(true),
-    onMouseUp:    () => setPrs(false),
+    // 마우스
+    onMouseEnter:  () => setHov(true),
+    onMouseLeave:  () => { setHov(false); setPrs(false); },
+    onMouseDown:   () => setPrs(true),
+    onMouseUp:     () => setPrs(false),
+    // 터치 (모바일)
+    onTouchStart:  () => setPrs(true),
+    onTouchEnd:    () => { setPrs(false); setHov(false); },
+    onTouchCancel: () => { setPrs(false); setHov(false); },
+    // 포커스 (키보드 접근성)
+    onFocus:       () => setHov(true),
+    onBlur:        () => { setHov(false); setPrs(false); },
   };
   const base = {
     height: sz.h, padding: `0 ${sz.px}px`, borderRadius: C.rMd,
@@ -152,7 +161,13 @@ function Button({ children, btnStyle='tertiary', size='lg', onClick, style, left
     cursor: disabled ? 'not-allowed' : 'pointer',
     width: fullWidth ? '100%' : 'auto',
     display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: sz.gap,
-    textDecoration: 'none', transition: 'background .14s ease, border-color .14s ease',
+    textDecoration: 'none',
+    // transition: bg + border + color 모두 부드럽게
+    transition: 'background .12s ease, border-color .12s ease, color .12s ease',
+    // 브라우저 기본 탭 하이라이트 제거
+    WebkitTapHighlightColor: 'transparent',
+    outline: 'none',
+    userSelect: 'none',
     ...style,
   };
   if (as === 'a' && href) return <a href={href} target={target} rel={rel} aria-label={ariaLabel} style={base} {...evts}>{leftIcon}{children}{rightIcon}</a>;
@@ -623,6 +638,8 @@ function CPRFigure() {
             }}
               onMouseEnter={e=>e.currentTarget.style.background='#FFF2F0'}
               onMouseLeave={e=>e.currentTarget.style.background=C.bgSurface}
+              onTouchStart={e=>e.currentTarget.style.background='#FFE4E0'}
+              onTouchEnd={e=>e.currentTarget.style.background=C.bgSurface}
             >
               타이머 시작
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke={C.textError} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
@@ -705,6 +722,8 @@ function BottomAction({ screen, onAdvance, onClose, goTo }) {
             }}
               onMouseEnter={e=>e.currentTarget.style.color=C.textPrimary}
               onMouseLeave={e=>e.currentTarget.style.color=C.textSecondary}
+              onTouchStart={e=>e.currentTarget.style.color=C.textPrimary}
+              onTouchEnd={e=>e.currentTarget.style.color=C.textSecondary}
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
               가이드 닫기
@@ -801,19 +820,12 @@ function AppShell({ onOpenAED }) {
 }
 
 function App() {
-  const [open, setOpen] = useState(true);
   return (
     <>
       <PhoneFrame>
-        <AppShell onOpenAED={() => setOpen(true)}/>
-        {open && <AEDModal onClose={() => setOpen(false)}/>}
+        <AEDModal onClose={() => {}} />
       </PhoneFrame>
-      {/* PC 전용 하단 안내 */}
-      <div style={{
-        display:'none',
-        textAlign:'center', marginTop:20,
-        fontSize:12, color:'#9CA3AF', lineHeight:1.6,
-      }} className="pc-hint">
+      <div style={{ display:'none', textAlign:'center', marginTop:20, fontSize:12, color:'#9CA3AF', lineHeight:1.6 }} className="pc-hint">
         플랩풋볼 매니저 전용 가이드 &nbsp;·&nbsp; 실제 응급 시 119에 신고하세요
       </div>
     </>
