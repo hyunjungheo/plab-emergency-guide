@@ -231,7 +231,7 @@ const FLOW = [
   {
     id:'step5', kind:'step', n:5, label:'심폐소생술 재개', art:'cpr',
     title:'심폐소생술을\n다시 시작하세요',
-    instruct:'가슴 뼈 아래 몸 중앙에 깍지 낀 두 손을 올리고, 몸과 수직이 되도록 5cm 이상 깊이로 빠르게 누르세요.',
+    instruct:'가슴뼈 아래 가슴 중앙에 깍지 낀 두 손을 올리고, 손과 몸이 수직이 되도록 5cm 이상 깊이로 빠르게 누르세요.',
     cta:'가이드 닫기',
   },
 ];
@@ -363,7 +363,7 @@ function IntroScreen({ screen, onOpenLocations, onAdvance }) {
           },
           {
             n:'2', title:'심폐소생술 시작',
-            body: <>가슴 뼈 아래 몸 중앙에 깍지 낀 두 손을 올리고, 몸과 수직이 되도록 5cm 이상 깊이로 빠르게 누르세요.</>,
+            body: <>가슴뼈 아래 가슴 중앙에 깍지 낀 두 손을 올리고, 손과 몸이 수직이 되도록 5cm 이상 깊이로 빠르게 누르세요.</>,
             action: (
               <div style={{marginTop:10, display:'flex', alignItems:'baseline', gap:10, fontSize:13, color:C.textSecondary}}>
                 {[['깊이','5cm'],['속도','100–120회/분']].map(([l,v], i, a) => (
