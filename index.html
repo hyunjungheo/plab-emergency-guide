@@ -290,6 +290,39 @@ function AEDModal({ onClose }) {
 }
 
 /* ─── Intro ──────────────────────────────────────────────────── */
+function LocationRowButton({ onClick }) {
+  const [hov, setHov] = useState(false);
+  const [prs, setPrs] = useState(false);
+  return (
+    <button
+      onClick={onClick}
+      onMouseEnter={()=>setHov(true)} onMouseLeave={()=>{setHov(false);setPrs(false);}}
+      onMouseDown={()=>setPrs(true)} onMouseUp={()=>setPrs(false)}
+      onTouchStart={()=>setPrs(true)} onTouchEnd={()=>{setPrs(false);setHov(false);}}
+      style={{
+        marginTop:10, width:'100%', cursor:'pointer',
+        padding:'13px 14px',
+        background: prs?'#E5E7EA':hov?'#EAEBEC':C.bgSurfaceSecondary,
+        border:'none',
+        borderRadius:C.rMd,
+        display:'flex', alignItems:'center', gap:10,
+        transition:'background .12s ease',
+        WebkitTapHighlightColor:'transparent',
+      }}>
+      <div style={{ width:28, height:28, borderRadius:C.rSm, flexShrink:0, background:C.bgPrimarySoft, color:C.textBrand, display:'inline-flex', alignItems:'center', justifyContent:'center' }}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+          <path d="M12 22s7-7.5 7-12a7 7 0 1 0-14 0c0 4.5 7 12 7 12Z" stroke="currentColor" strokeWidth="1.8"/>
+          <circle cx="12" cy="10" r="2.4" stroke="currentColor" strokeWidth="1.8"/>
+        </svg>
+      </div>
+      <span style={{ flex:1, fontSize:14, fontWeight:600, color:C.textPrimary, textAlign:'left', letterSpacing:'-0.01em' }}>플랩 스타디움 AED 비치 위치</span>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+        <path d="M9 6l6 6-6 6" stroke={C.textTertiary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    </button>
+  );
+}
+
 function IntroScreen({ screen, onOpenLocations, onAdvance }) {
   return (
     <div style={{ flex:1, display:'flex', flexDirection:'column' }}>
@@ -300,7 +333,7 @@ function IntroScreen({ screen, onOpenLocations, onAdvance }) {
           {
             n:'1', title:'119에 즉시 신고',
             /* ② 문구 수정 */
-            body: <>반응·호흡이 없으면 <b style={{color:C.textPrimary}}>가장 먼저 119</b>에 신고하세요. 119 안내에 따라주세요.</>,
+            body: <>반응·호흡이 없으면 <b style={{color:C.textPrimary}}>가장 먼저 119</b>에 신고하고 안내에 따라 주세요.</>,
             action: (
               <div style={{marginTop:10}}>
                 <Button as="a" href="tel:119" btnStyle="danger-solid" size="sm"
@@ -346,14 +379,7 @@ function IntroScreen({ screen, onOpenLocations, onAdvance }) {
         ))}
       </div>
 
-      <button onClick={onOpenLocations} style={{ marginTop:12, width:'100%', cursor:'pointer', padding:'12px 4px', background:'transparent', border:'none', display:'flex', alignItems:'center', gap:6 }}>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-          <path d="M12 22s7-7.5 7-12a7 7 0 1 0-14 0c0 4.5 7 12 7 12Z" stroke={C.textSecondary} strokeWidth="1.8"/>
-          <circle cx="12" cy="10" r="2.4" stroke={C.textSecondary} strokeWidth="1.8"/>
-        </svg>
-        <span style={{ fontSize:13, fontWeight:600, color:C.textPrimary }}>플랩 스타디움 AED 비치 위치</span>
-        <svg width="14" height="14" viewBox="0 0 24 24" style={{ marginLeft:'auto' }}><path d="M9 6l6 6-6 6" stroke={C.textTertiary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/></svg>
-      </button>
+      <LocationRowButton onClick={onOpenLocations} />
 
       {/* tertiary — 중간 중요도 */}
       <Button btnStyle="tertiary" size="lg" fullWidth onClick={onAdvance} style={{ marginTop:10 }}
@@ -419,7 +445,7 @@ function StepScreen({ screen, onPick }) {
 
       {/* 1. noteBullets: 박스 추가 */}
       {screen.noteBullets && (
-        <div style={{ margin:'32px 0 0', padding:'12px 14px', borderRadius:C.rMd, background:C.bgSurfaceSecondary, display:'flex', flexDirection:'column', gap:6 }}>
+        <div style={{ margin:'32px 0 0', padding:'18px 16px', borderRadius:C.rMd, background:C.bgSurfaceSecondary, display:'flex', flexDirection:'column', gap:8 }}>
           {screen.noteBullets.map((b, i) => (
             <div key={i} style={{ display:'flex', alignItems:'flex-start', gap:8, fontSize:14, color:C.textPrimary }}>
               <span style={{ flexShrink:0, marginTop:5, width:5, height:5, borderRadius:'50%', background:C.textTertiary, display:'inline-block' }} />
@@ -486,8 +512,8 @@ function BranchOption({ opt, onPick }) {
           : <svg width="20" height="20" viewBox="0 0 24 24"><path d="M6 12l4 4 8-8" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" fill="none"/></svg>}
       </div>
       <div style={{ flex:1 }}>
-        <div style={{ fontSize:11, fontWeight:800, color:isErr?'#8C1A10':'#1A4FB0', letterSpacing:'.05em' }}>AED 음성</div>
-        <div style={{ fontSize:16, fontWeight:800, color:C.textPrimary, letterSpacing:'-0.02em', marginTop:2, lineHeight:1.3 }}>{opt.voice}</div>
+        <div style={{ fontSize:11, fontWeight:600, color:isErr?'#8C1A10':'#1A4FB0', letterSpacing:'.04em' }}>AED 음성</div>
+        <div style={{ fontSize:16, fontWeight:600, color:C.textPrimary, letterSpacing:'-0.02em', marginTop:2, lineHeight:1.3 }}>{opt.voice}</div>
         <div style={{ fontSize:12, color:C.textSecondary, marginTop:3 }}>{opt.sub}</div>
       </div>
       <svg width="16" height="16" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6" stroke={C.textSecondary} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" fill="none"/></svg>
@@ -672,7 +698,7 @@ function RolesCard() {
     <div style={{ marginTop:12, padding:'14px', borderRadius:C.rMd, background:C.bgSurfaceSecondary }}>
       {/* 타이틀: fontSize:14 — BigTitle desc와 통일 */}
       <div style={{ fontSize:14, fontWeight:800, color:C.textError, letterSpacing:'.06em', marginBottom:8 }}>
-        역할 분담 <span style={{ fontSize:14, color:C.textTertiary, fontWeight:500, letterSpacing:0 }}>"검은 옷 입으신 분"처럼 콕 집어 부탁하세요</span>
+        역할 분담 <span style={{ fontSize:11.5, color:C.textTertiary, fontWeight:400, letterSpacing:0 }}>"검은 옷 입으신 분"처럼 콕 집어 부탁하세요</span>
       </div>
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
         {['심폐소생술 주도','119 신고','AED 확보','주변 공간 확보'].map((r, i) => (
@@ -695,7 +721,7 @@ function BottomAction({ screen, onAdvance, onClose, goTo }) {
   const isLast = screen.id === 'step5';
 
   return (
-    <div style={{ flexShrink:0, padding:'12px 20px 22px', background:C.bgSurface, borderTop:`1px solid ${C.borderSubtle}` }}>
+    <div style={{ flexShrink:0, padding:'12px 20px 22px', background:C.bgSurface }}>
       {isLast ? (
         <>
           {/* 반복 안내 — 뉴트럴 배경. 파란 박스 제거해 하단 CTA 블루와 충돌 방지 */}
