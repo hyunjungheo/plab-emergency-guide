@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>AED 사용 가이드 — 진행 중 매치</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@1.3.9/dist/web/variable/pretendardvariable.css');
+  html, body { margin:0; padding:0; height:100%; background:#EDEEF1; font-family: 'Pretendard Variable', Pretendard, -apple-system, system-ui, "Apple SD Gothic Neo", sans-serif; color:#111; -webkit-font-smoothing:antialiased; }
+  *, *::before, *::after { box-sizing: border-box; }
+  #root { width:100%; min-height:100%; display:flex; align-items:center; justify-content:center; padding: 24px 12px 48px; }
+  button { font-family:inherit; }
+</style>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect } = React;
+
+const C = {
+  bgSurface:'#FFFFFF', bgSurfaceSecondary:'#F7F8FA',
+  bgPrimary:'#1570FF', bgPrimarySoft:'#E8F1FF',
+  textPrimary:'#1A1A1A', textSecondary:'#5E6470',
+  textTertiary:'#9CA3AF', textBrand:'#1570FF',
+  textError:'#FF4029', textOnPrimary:'#FFFFFF',
+  borderDefault:'#E5E7EB', borderSubtle:'#EFF0F2',
+  errorSoft:'#FFEAE8', errorLine:'#FFBFB8',
+  rSm:8, rMd:12, rLg:16, rFull:9999,
+};
+
+/*
+  ┌─────────────────────────────────────────────────────────────────────┐
+  │  Button Style Map — 가이드 이미지 기준                               │
+  │  각 상태: en(enabled) / hv(hovered+focused) / pr(pressed) / ds(disabled)│
+  └─────────────────────────────────────────────────────────────────────┘
+
+  primary    solid blue   높은 중요도
+  tertiary   soft blue    중간 중요도
+  quaternary soft gray    낮은 중요도 (비강조)
+  negative   ghost red    낮은 중요도 (취소/경고)
+
+  danger-solid   solid red  응급 강조 (119, CPR 타이머)
+  danger-outline outline red 진행 중 보조 액션
+*/
+const STYLE_MAP = {
+  primary: {
+    en: { bg:'#1570FF', text:'#FFFFFF', border:'none' },
+    hv: { bg:'#0F62E8', text:'#FFFFFF', border:'none' },
+    pr: { bg:'#0A4EC4', text:'#FFFFFF', border:'none' },
+    ds: { bg:'#C8D8FF', text:'rgba(255,255,255,0.55)', border:'none' },
+  },
+  tertiary: {
+    en: { bg:'#E8F1FF', text:'#1570FF', border:'none' },
+    hv: { bg:'#D4E5FF', text:'#1570FF', border:'none' },
+    pr: { bg:'#AECBFF', text:'#0A4EC4', border:'none' },
+    ds: { bg:'#F2F7FF', text:'#9BBDFF', border:'none' },
+  },
+  quaternary: {
+    en: { bg:'#F2F3F5', text:'#3A3F47', border:'none' },
+    hv: { bg:'#E5E7EA', text:'#3A3F47', border:'none' },
+    pr: { bg:'#B8BDC7', text:'#1A1A1A', border:'none' },
+    ds: { bg:'#EAEBEC', text:'#9CA3AF', border:'none' },
+  },
+  negative: {
+    en: { bg:'transparent', text:'#FF4029', border:'none' },
+    hv: { bg:'#FFF0EE',    text:'#FF4029', border:'none' },
+    pr: { bg:'#FFD8D3',    text:'#E03520', border:'none' },
+    ds: { bg:'transparent', text:'#FFBBAF', border:'none' },
+  },
+  'danger-solid': {
+    en: { bg:'#FF4029', text:'#FFFFFF', border:'none' },
+    hv: { bg:'#E03520', text:'#FFFFFF', border:'none' },
+    pr: { bg:'#C42E1C', text:'#FFFFFF', border:'none' },
+    ds: { bg:'#FFBFB8', text:'rgba(255,255,255,0.7)', border:'none' },
+  },
+  'danger-outline': {
+    en: { bg:'transparent', text:'#FF4029', border:'1.5px solid #FF4029' },
+    hv: { bg:'#FFF0EE',    text:'#FF4029', border:'1.5px solid #FF4029' },
+    pr: { bg:'#FFD8D3',    text:'#E03520', border:'1.5px solid #E03520' },
+    ds: { bg:'transparent', text:'#FFBBAF', border:'1.5px solid #FFBBAF' },
+  },
+};
+
+function Button({ children, btnStyle='tertiary', size='lg', onClick, style, leftIcon, rightIcon, fullWidth, as, href, target, rel, ariaLabel, disabled }) {
+  const [hov, setHov] = useState(false);
+  const [prs, setPrs] = useState(false);
+  const sz = {
+    lg: { h:56, fs:17, fw:600, px:16, gap:8 },
+    md: { h:48, fs:15, fw:600, px:14, gap:6 },
+    sm: { h:36, fs:13, fw:600, px:12, gap:4 },
+  }[size] || { h:56, fs:17, fw:600, px:16, gap:8 };
+
+  const map = STYLE_MAP[btnStyle] || STYLE_MAP.tertiary;
+  const st  = disabled ? map.ds : prs ? map.pr : hov ? map.hv : map.en;
+
+  const evts = disabled ? {} : {
+    onMouseEnter: () => setHov(true),
+    onMouseLeave: () => { setHov(false); setPrs(false); },
+    onMouseDown:  () => setPrs(true),
+    onMouseUp:    () => setPrs(false),
+  };
+  const base = {
+    height: sz.h, padding: `0 ${sz.px}px`, borderRadius: C.rMd,
+    background: st.bg, color: st.text, border: st.border,
+    fontSize: sz.fs, fontWeight: sz.fw, letterSpacing: '-0.02em',
+    cursor: disabled ? 'not-allowed' : 'pointer',
+    width: fullWidth ? '100%' : 'auto',
+    display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: sz.gap,
+    textDecoration: 'none', transition: 'background .14s ease, border-color .14s ease',
+    ...style,
+  };
+  if (as === 'a' && href) return <a href={href} target={target} rel={rel} aria-label={ariaLabel} style={base} {...evts}>{leftIcon}{children}{rightIcon}</a>;
+  return <button onClick={onClick} aria-label={ariaLabel} style={base} disabled={disabled} {...evts}>{leftIcon}{children}{rightIcon}</button>;
+}
+
+function IconButton({ children, onClick, ariaLabel }) {
+  return (
+    <button onClick={onClick} aria-label={ariaLabel} style={{
+      width:40, height:40, borderRadius:C.rFull, border:'none',
+      background:C.bgSurfaceSecondary, cursor:'pointer',
+      display:'inline-flex', alignItems:'center', justifyContent:'center', flexShrink:0,
+    }}>{children}</button>
+  );
+}
+
+function BigTitle({ title, desc }) {
+  return (
+    <div style={{ padding:'8px 0 0' }}>
+      <h1 style={{ margin:0, fontSize:26, lineHeight:1.25, letterSpacing:'-0.03em', fontWeight:800, color:C.textPrimary, whiteSpace:'pre-line' }}>{title}</h1>
+      {desc && <div style={{ marginTop:10, fontSize:14, lineHeight:1.55, color:C.textSecondary, whiteSpace:'pre-line' }}>{desc}</div>}
+    </div>
+  );
+}
+
+/* ─── Flow ───────────────────────────────────────────────────── */
+const FLOW = [
+  { id:'intro',     kind:'intro',     title:'급성심정지가\n발생했다면', cta:'AED 사용법 자세히 보기' },
+  { id:'locations', kind:'locations', title:'플랩 스타디움 AED 위치' },
+  {
+    id:'step1', kind:'step', n:1, label:'전원 켜기', art:'power',
+    title:'자동심장충격기\n전원을 켜세요',
+    instruct:'본체의 전원 버튼을 눌러주세요.',
+    note:'덮개를 열면 자동으로 켜지는 기종도 있어요.',
+    showRoles:true,
+  },
+  {
+    id:'step2', kind:'step', n:2, label:'패드 부착', art:'pads',
+    title:'패드 2개를\n가슴에 붙이세요',
+    instruct:'그림 위치에 정확히 붙이세요.',
+    noteBullets:['가슴에 물·땀이 있으면 닦고 붙여요.','붙이는 동안에도 심폐소생술은 멈추지 마세요.'],
+    femaleNote:true,
+  },
+  {
+    id:'step3', kind:'step', n:3, label:'리듬 분석', art:'analyze',
+    title:'\u2018분석 중\u2019\n환자에게서 손을 떼세요',
+    instruct:'자동심장충격기 음성 안내를 들으세요.',
+    branches:[
+      { go:'step4', voice:'충격이 필요합니다', sub:'충격 버튼 누르기', tone:'error' },
+      { go:'step5', voice:'심폐소생술을 계속', sub:'가슴 압박 재개',   tone:'brand' },
+    ],
+  },
+  {
+    id:'step4', kind:'step', n:4, label:'전기 충격', art:'shock',
+    title:'깜박이는 충격 버튼을\n누르세요',
+    instruct:'한 번만 짧게 누르세요.',
+    warn:'버튼 누르기 전, 모두 환자에게서 떨어졌는지 확인하세요.',
+    shoutLine:'\u201c모두 떨어지세요!\u201d',
+  },
+  {
+    id:'step5', kind:'step', n:5, label:'심폐소생술 재개', art:'cpr',
+    title:'심폐소생술을\n다시 시작하세요',
+    instruct:'가슴 가운데를 약 5cm 깊이로 누르세요.',
+    cta:'가이드 닫기',
+  },
+];
+const NEXT = { intro:'step1', step1:'step2', step2:'step3', step4:'step5' };
+const findScreen = id => FLOW.find(s => s.id === id);
+
+/* ─── Modal ──────────────────────────────────────────────────── */
+function AEDModal({ onClose }) {
+  const [id, setId]           = useState('intro');
+  const [history, setHistory] = useState(['intro']);
+  const goTo = next => { setHistory(h => [...h, next]); setId(next); };
+  const back  = () => setHistory(h => {
+    if (h.length <= 1) { onClose(); return h; }
+    const nxt = h.slice(0, -1); setId(nxt[nxt.length - 1]); return nxt;
+  });
+  const advance = () => { const n = NEXT[id]; if (n) goTo(n); };
+  const s = findScreen(id);
+  const stepIds = ['step1','step2','step3','step4','step5'];
+  const stepIdx = stepIds.indexOf(s.id);
+
+  return (
+    <div style={{ position:'absolute', inset:0, zIndex:30, background:C.bgSurface, display:'flex', flexDirection:'column' }}>
+      <header style={{ padding:'12px 20px 8px', flexShrink:0, background:C.bgSurface }}>
+        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+          <IconButton ariaLabel="뒤로" onClick={back}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke={C.textPrimary} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          </IconButton>
+          <div style={{ flex:1, textAlign:'center' }}>
+            {s.kind === 'step' ? (
+              <>
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:6, marginBottom:4 }}>
+                  {stepIds.map((sid, i) => (
+                    <div key={sid} style={{ width:sid===s.id?20:8, height:4, borderRadius:C.rFull, background:i<=stepIdx?C.bgPrimary:'#DDE0E8', transition:'width .2s ease' }} />
+                  ))}
+                </div>
+                <div style={{ fontSize:11, fontWeight:700, color:C.textSecondary, letterSpacing:'.08em' }}>STEP {s.n} / 5 · {s.label}</div>
+              </>
+            ) : s.kind === 'locations'
+              ? <div style={{ fontSize:15, fontWeight:700, color:C.textPrimary }}>AED 위치 안내</div>
+              : <div style={{ fontSize:15, fontWeight:700, color:C.textPrimary }}>응급상황 대응 가이드</div>
+            }
+          </div>
+          <div style={{ width:40 }} />
+        </div>
+      </header>
+
+      <main style={{ flex:1, overflow:'auto', background:C.bgSurface, padding:'0 20px 16px', display:'flex', flexDirection:'column' }}>
+        {s.kind === 'intro'     && <IntroScreen     screen={s} onOpenLocations={() => goTo('locations')} onAdvance={advance} />}
+        {s.kind === 'locations' && <LocationsScreen />}
+        {s.kind === 'step'      && <StepScreen      screen={s} onPick={goTo} />}
+      </main>
+
+      <BottomAction screen={s} onAdvance={advance} onClose={onClose} goTo={goTo} />
+    </div>
+  );
+}
+
+/* ─── Intro ──────────────────────────────────────────────────── */
+function IntroScreen({ screen, onOpenLocations, onAdvance }) {
+  return (
+    <div style={{ flex:1, display:'flex', flexDirection:'column' }}>
+      <BigTitle title={screen.title} desc="아래 3단계를 순서대로 진행하세요." />
+
+      <div style={{ marginTop:18 }}>
+        {[
+          {
+            n:'1', title:'119에 즉시 신고',
+            /* ② 문구 수정 */
+            body: <>반응·호흡이 없으면 <b style={{color:C.textPrimary}}>가장 먼저 119</b>에 신고하세요. 119 안내에 따라주세요.</>,
+            action: (
+              <div style={{marginTop:10}}>
+                <Button as="a" href="tel:119" btnStyle="danger-solid" size="sm"
+                  style={{borderRadius:C.rFull, height:36, padding:'0 14px'}}
+                  leftIcon={<svg width="14" height="14" viewBox="0 0 24 24"><path d="M5 4h3l2 5-2 1a11 11 0 0 0 6 6l1-2 5 2v3a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2Z" fill="#fff"/></svg>}
+                  rightIcon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+              >119에 전화 걸기</Button>
+              </div>
+            ),
+          },
+          {
+            n:'2', title:'심폐소생술 시작',
+            body: <>가슴 가운데를 깊고 빠르게 누르세요. 인공호흡이 어려우면 <b style={{color:C.textPrimary}}>가슴압박만</b> 계속해도 돼요.</>,
+            action: (
+              <div style={{marginTop:10, display:'flex', alignItems:'baseline', gap:10, fontSize:13, color:C.textSecondary}}>
+                {[['깊이','5cm'],['속도','100–120회/분'],['비율','30:2']].map(([l,v], i, a) => (
+                  <span key={l} style={{display:'inline-flex', alignItems:'baseline', gap:4}}>
+                    <span style={{fontSize:11.5, color:C.textTertiary, fontWeight:600}}>{l}</span>
+                    <b style={{color:C.textPrimary, fontSize:14, letterSpacing:'-0.02em'}}>{v}</b>
+                    {i < a.length-1 && <span style={{width:3, height:3, borderRadius:'50%', background:C.textTertiary, display:'inline-block', marginLeft:6}}/>}
+                  </span>
+                ))}
+              </div>
+            ),
+          },
+          {
+            n:'3', title:'자동심장충격기(AED) 사용',
+            body: <>전기 충격으로 멈춘 심장의 리듬을 되돌리는 응급 의료기기예요.</>,
+            last: true,
+          },
+        ].map(({ n, title, body, action, last }) => (
+          <div key={n} style={{ display:'flex', gap:14, paddingBottom:last?0:18, position:'relative' }}>
+            <div style={{ display:'flex', flexDirection:'column', alignItems:'center', flexShrink:0, width:20 }}>
+              <span style={{ fontSize:15, fontWeight:900, color:C.textError, lineHeight:1 }}>{n}</span>
+              {!last && <div style={{ flex:1, width:1, marginTop:6, marginBottom:-10, background:C.borderSubtle }} />}
+            </div>
+            <div style={{ flex:1 }}>
+              <div style={{ fontSize:16, fontWeight:800, color:C.textPrimary, letterSpacing:'-0.02em', lineHeight:1.3 }}>{title}</div>
+              <div style={{ marginTop:6, fontSize:13.5, color:C.textSecondary, lineHeight:1.55 }}>{body}</div>
+              {action}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <button onClick={onOpenLocations} style={{ marginTop:12, width:'100%', cursor:'pointer', padding:'12px 4px', background:'transparent', border:'none', display:'flex', alignItems:'center', gap:6 }}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+          <path d="M12 22s7-7.5 7-12a7 7 0 1 0-14 0c0 4.5 7 12 7 12Z" stroke={C.textSecondary} strokeWidth="1.8"/>
+          <circle cx="12" cy="10" r="2.4" stroke={C.textSecondary} strokeWidth="1.8"/>
+        </svg>
+        <span style={{ fontSize:13, fontWeight:600, color:C.textPrimary }}>플랩 스타디움 AED 비치 위치</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" style={{ marginLeft:'auto' }}><path d="M9 6l6 6-6 6" stroke={C.textTertiary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/></svg>
+      </button>
+
+      {/* tertiary — 중간 중요도 */}
+      <Button btnStyle="tertiary" size="lg" fullWidth onClick={onAdvance} style={{ marginTop:10 }}
+        rightIcon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke={C.textBrand} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+      >{screen.cta}</Button>
+
+      <div style={{ marginTop:16, paddingTop:12, borderTop:`1px solid ${C.borderSubtle}`, textAlign:'center' }}>
+        <a href="https://www.e-gen.or.kr/egen/first_aid_basics.do?contentsno=16" target="_blank" rel="noopener noreferrer"
+          style={{ fontSize:11.5, color:C.textTertiary, textDecoration:'underline', textUnderlineOffset:3, display:'inline-flex', alignItems:'center', gap:4 }}>
+          출처 · 중앙응급의료센터
+        </a>
+      </div>
+      <div style={{ flex:1, minHeight:8 }} />
+    </div>
+  );
+}
+
+/* ─── Locations ──────────────────────────────────────────────── */
+const STADIUM_AED = [
+  { name:'플랩 스타디움 수원',                loc:'실내구장 화장실 및 자판기 옆' },
+  { name:'플랩 스타디움 여주',                loc:'사무실 컨테이너 내부' },
+  { name:'플랩 스타디움 가산 마리오',          loc:'엘리베이터 측 경기장 출입구 실내 공간' },
+  { name:'플랩 스타디움 안산 고잔',            loc:'옥상층 출입문 앞 창고 내부' },
+  { name:'플랩 스타디움 구미',                loc:'실내 사무 공간(장비 보관 장소) 앞' },
+  { name:'플랩 스타디움 가산 디지털엠파이어',   loc:'1구장 측 옥상 계단 출입구 실내 공간' },
+  { name:'플랩 스타디움 인천 남동',            loc:'경기장 옆 엘리베이터실 내부' },
+  { name:'플랩 스타디움 가산 코오롱테크노밸리',  loc:'블랙구장 출입구 앞' },
+];
+
+function LocationsScreen() {
+  return (
+    <div style={{ flex:1, display:'flex', flexDirection:'column' }}>
+      <BigTitle title="플랩 스타디움 AED 위치" desc="매치 시작 전 미리 확인해 두면 도움이 돼요." />
+      <div style={{ marginTop:16, borderRadius:C.rLg, background:C.bgSurfaceSecondary, overflow:'hidden' }}>
+        {STADIUM_AED.map((s, i) => (
+          <div key={s.name}>
+            <div style={{ padding:'14px 16px', display:'flex', alignItems:'flex-start', gap:12 }}>
+              <div style={{ width:32, height:32, borderRadius:C.rSm, flexShrink:0, background:C.bgPrimarySoft, color:C.textBrand, display:'inline-flex', alignItems:'center', justifyContent:'center', marginTop:2 }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 22s7-7.5 7-12a7 7 0 1 0-14 0c0 4.5 7 12 7 12Z" stroke="currentColor" strokeWidth="1.8"/><circle cx="12" cy="10" r="2.4" stroke="currentColor" strokeWidth="1.8"/></svg>
+              </div>
+              <div style={{ flex:1 }}>
+                <div style={{ fontSize:14, fontWeight:700, color:C.textPrimary, letterSpacing:'-0.01em', lineHeight:1.35 }}>{s.name}</div>
+                <div style={{ marginTop:4, fontSize:13, color:C.textSecondary }}>{s.loc}</div>
+              </div>
+            </div>
+            {i < STADIUM_AED.length - 1 && <div style={{ height:1, background:C.borderSubtle, marginLeft:60 }} />}
+          </div>
+        ))}
+      </div>
+      <div style={{ flex:1, minHeight:8 }} />
+    </div>
+  );
+}
+
+/* ─── Step Screen ─────────────────────────────────────────────── */
+function StepScreen({ screen, onPick }) {
+  return (
+    <div style={{ flex:1, display:'flex', flexDirection:'column' }}>
+      <BigTitle title={screen.title} desc={screen.instruct} />
+      <div style={{ flex:1, minHeight:4 }} />
+      <ArtBlock kind={screen.art} />
+      {screen.showRoles && <RolesCard />}
+
+      {/* 1. noteBullets: 박스 추가 */}
+      {screen.noteBullets && (
+        <div style={{ margin:'32px 0 0', padding:'12px 14px', borderRadius:C.rMd, background:C.bgSurfaceSecondary, display:'flex', flexDirection:'column', gap:6 }}>
+          {screen.noteBullets.map((b, i) => (
+            <div key={i} style={{ display:'flex', alignItems:'flex-start', gap:8, fontSize:13, color:C.textPrimary }}>
+              <span style={{ flexShrink:0, marginTop:5, width:5, height:5, borderRadius:'50%', background:C.textTertiary, display:'inline-block' }} />
+              <span style={{ fontWeight:400, color:C.textPrimary }}>{b}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* 2. femaleNote: 박스 제거 — 인포 아이콘 + 텍스트만 */}
+      {screen.femaleNote && (
+        <div style={{ margin:'10px 0 0', display:'flex', gap:8, alignItems:'flex-start' }}>
+          <div style={{ flexShrink:0, marginTop:2, width:16, height:16, borderRadius:'50%', background:C.bgPrimarySoft, color:C.textBrand, display:'inline-flex', alignItems:'center', justifyContent:'center', fontSize:10, fontWeight:900 }}>i</div>
+          <div style={{ flex:1, fontSize:13, lineHeight:1.45, color:C.textSecondary }}>
+            <span style={{ fontWeight:700, color:C.textPrimary }}>여성 환자라면 </span>
+            브래지어를 풀거나 벗기지 않고 위치만 조정한 뒤, 가슴 조직을 피해 <b style={{color:C.textPrimary}}>맨 가슴</b>에 패드를 붙이세요.
+          </div>
+        </div>
+      )}
+
+      {/* screen.note: 텍스트만 */}
+      {screen.note && (
+        <div style={{ margin:'10px 0 0', fontSize:13.5, color:C.textSecondary, lineHeight:1.5, whiteSpace:'pre-line' }}>
+          {screen.note}
+        </div>
+      )}
+
+      {(screen.warn || screen.shoutLine) && (
+        <div style={{ margin:'12px 0 0', padding:'14px 16px', borderRadius:C.rMd, background:C.errorSoft, border:`1px solid ${C.errorLine}` }}>
+          <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+            <div style={{ width:22, height:22, borderRadius:C.rFull, flexShrink:0, background:C.textError, color:'#fff', display:'inline-flex', alignItems:'center', justifyContent:'center', fontSize:13, fontWeight:800 }}>!</div>
+            <div style={{ fontSize:12, fontWeight:800, color:C.textError, letterSpacing:'.04em' }}>주의</div>
+          </div>
+          {screen.warn && <div style={{ marginTop:8, fontSize:13.5, color:C.textPrimary, lineHeight:1.5 }}>{screen.warn}</div>}
+          {screen.shoutLine && (
+            <div style={{ marginTop:10, padding:'10px 14px', borderRadius:C.rMd, background:C.textError, color:'#fff', fontSize:15, fontWeight:800, display:'flex', alignItems:'center', gap:10 }}>
+              <svg width="18" height="18" viewBox="0 0 24 24"><path d="M3 10v4h4l5 4V6L7 10H3Z" fill="#fff"/><path d="M16 8c2 2 2 6 0 8" stroke="#fff" strokeWidth="2" strokeLinecap="round" fill="none"/></svg>
+              큰 소리로 {screen.shoutLine}
+            </div>
+          )}
+        </div>
+      )}
+
+      {screen.branches && (
+        <div style={{ marginTop:16, display:'flex', flexDirection:'column', gap:10 }}>
+          <div style={{ fontSize:11.5, fontWeight:800, color:C.textError, letterSpacing:'.12em' }}>어떤 음성이 나왔나요?</div>
+          {screen.branches.map(opt => <BranchOption key={opt.go} opt={opt} onPick={onPick} />)}
+        </div>
+      )}
+      <div style={{ flex:1, minHeight:6 }} />
+    </div>
+  );
+}
+
+function BranchOption({ opt, onPick }) {
+  const [hov, setHov] = useState(false);
+  const isErr = opt.tone === 'error';
+  return (
+    <button onClick={() => onPick && onPick(opt.go)} onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
+      style={{ width:'100%', textAlign:'left', cursor:'pointer', padding:14, borderRadius:C.rLg, background:isErr?(hov?'#FFD6D2':C.errorSoft):(hov?'#D4E5FF':C.bgPrimarySoft), border:`2px solid ${isErr?C.errorLine:'#BFD6FF'}`, display:'flex', alignItems:'center', gap:12, transition:'background .14s' }}>
+      <div style={{ width:42, height:42, borderRadius:C.rFull, flexShrink:0, background:isErr?C.textError:C.bgPrimary, display:'inline-flex', alignItems:'center', justifyContent:'center' }}>
+        {isErr
+          ? <svg width="20" height="20" viewBox="0 0 24 24"><path d="M11 4l3 8h6l-9 12 1-8H6l5-12Z" fill="#fff"/></svg>
+          : <svg width="20" height="20" viewBox="0 0 24 24"><path d="M6 12l4 4 8-8" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" fill="none"/></svg>}
+      </div>
+      <div style={{ flex:1 }}>
+        <div style={{ fontSize:11, fontWeight:800, color:isErr?'#8C1A10':'#1A4FB0', letterSpacing:'.05em' }}>AED 음성</div>
+        <div style={{ fontSize:16, fontWeight:800, color:C.textPrimary, letterSpacing:'-0.02em', marginTop:2, lineHeight:1.3 }}>{opt.voice}</div>
+        <div style={{ fontSize:12, color:C.textSecondary, marginTop:3 }}>{opt.sub}</div>
+      </div>
+      <svg width="16" height="16" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6" stroke={C.textSecondary} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" fill="none"/></svg>
+    </button>
+  );
+}
+
+/* ─── Art Blocks ─────────────────────────────────────────────── */
+function ArtBlock({ kind }) {
+  return (
+    <div style={{ display:'flex', justifyContent:'center', padding:'4px 0' }}>
+      {kind === 'power'   && <DeviceFigure highlight="power" />}
+      {kind === 'analyze' && <DeviceFigure highlight="analyze" />}
+      {kind === 'shock'   && <DeviceFigure highlight="shock" pulse />}
+      {kind === 'pads'    && <PadFigure />}
+      {kind === 'cpr'     && <CPRFigure />}
+    </div>
+  );
+}
+
+function DeviceFigure({ highlight, pulse }) {
+  const hiP=highlight==='power', hiA=highlight==='analyze', hiS=highlight==='shock';
+  const stroke='#94A3B8', lid='#E5E7EB', lidIn='#F3F4F6', body='#D1D5DB', disp='#F9FAFB', dim='#9CA3AF', dark='#6B7280';
+  const Pulse = ({ cx, cy, r }) => (
+    <circle cx={cx} cy={cy} r={r} fill="none" stroke={C.textError} strokeWidth="2" opacity=".55">
+      <animate attributeName="r" values={`${r};${r+14}`} dur="1.3s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values=".55;0" dur="1.3s" repeatCount="indefinite"/>
+    </circle>
+  );
+  return (
+    <div style={{ width:260 }}>
+      <svg width="260" height="200" viewBox="0 0 220 180">
+        <ellipse cx="110" cy="170" rx="80" ry="6" fill="#000" opacity=".06"/>
+        <path d="M44 30c0-6 6-12 12-12h108c6 0 12 6 12 12v36H44Z" fill={lid} stroke={stroke} strokeWidth="1.5"/>
+        <rect x="58" y="26" width="104" height="36" rx="3" fill={lidIn} stroke={stroke} strokeWidth="0.8"/>
+        <path d="M30 64c0-6 6-12 12-12h136c6 0 12 6 12 12v82c0 6-6 12-12 12H42c-6 0-12-6-12-12Z" fill={body} stroke={stroke} strokeWidth="1.6"/>
+        <rect x="44" y="68" width="78" height="34" rx="4" fill={disp} stroke={stroke} strokeWidth="0.8"/>
+        <path d="M50 86h8l3-6 4 12 4-8h10" stroke={dim} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+        <g>{[0,1,2,3,4].map(i => <rect key={i} x={128+i*6} y={72} width="3" height="22" rx="1.5" fill={hiA?C.textError:dim}/>)}</g>
+        {hiA && <Pulse cx={143} cy={83} r={26}/>}
+        <circle cx="70" cy="128" r="20" fill={hiS?C.textError:'#E5E7EB'} stroke={hiS?C.textError:stroke} strokeWidth="1.6">
+          {hiS && pulse && <animate attributeName="fill" values={`${C.textError};#FF7A69;${C.textError}`} dur="0.8s" repeatCount="indefinite"/>}
+        </circle>
+        <path d="M66 118l7 8-5 4 6 8-7-4" fill="none" stroke={hiS?'#fff':dark} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+        {hiS && <Pulse cx={70} cy={128} r={28}/>}
+        <rect x="118" y="118" width="42" height="28" rx="6" fill={hiP?C.textError:dark} stroke={hiP?C.textError:stroke} strokeWidth="1.2"/>
+        <circle cx="139" cy="132" r="6" fill="none" stroke="#fff" strokeWidth="2"/>
+        <path d="M139 126v6" stroke="#fff" strokeWidth="2" strokeLinecap="round"/>
+        {hiP && <Pulse cx={139} cy={132} r={26}/>}
+      </svg>
+    </div>
+  );
+}
+
+function PadFigure() {
+  return (
+    <svg width="220" height="240" viewBox="0 0 200 220">
+      <path d="M40 30c10-12 30-18 60-18s50 6 60 18l-8 14c20 4 32 16 32 36v110c0 16-14 28-30 28H46c-16 0-30-12-30-28V80c0-20 12-32 32-36Z" fill="#FFE8E5" stroke={C.textError} strokeWidth="2"/>
+      <rect x="40" y="64" width="44" height="34" rx="6" fill={C.textError}/>
+      <text x="62" y="87" textAnchor="middle" fontSize="20" fontWeight="800" fill="#fff" fontFamily="'Pretendard Variable',Pretendard,sans-serif">1</text>
+      <rect x="116" y="128" width="44" height="34" rx="6" fill={C.textError}/>
+      <text x="138" y="151" textAnchor="middle" fontSize="20" fontWeight="800" fill="#fff" fontFamily="'Pretendard Variable',Pretendard,sans-serif">2</text>
+      <g stroke={C.textError} strokeWidth="1.6" fill="none" strokeDasharray="3 3">
+        <path d="M62 64 L62 50"/><path d="M138 162 L138 178"/>
+      </g>
+      <text x="62" y="44" textAnchor="middle" fontSize="11" fontWeight="800" fill={C.textError} fontFamily="'Pretendard Variable',Pretendard,sans-serif">오른쪽 가슴 위쪽</text>
+      <text x="138" y="192" textAnchor="middle" fontSize="11" fontWeight="800" fill={C.textError} fontFamily="'Pretendard Variable',Pretendard,sans-serif">왼쪽 옆구리</text>
+    </svg>
+  );
+}
+
+function CPRFigure() {
+  const DURATION=60, TOTAL=2;
+  const [running, setRunning] = useState(false);
+  const [set, setSet]         = useState(1);
+  const [rem, setRem]         = useState(DURATION);
+  const [done, setDone]       = useState(false);
+  useEffect(() => {
+    if (!running) return;
+    const id = setInterval(() => setRem(p => {
+      if (p > 1) return p - 1;
+      if (set < TOTAL) { setSet(s => s + 1); return DURATION; }
+      setRunning(false); setDone(true); return 0;
+    }), 1000);
+    return () => clearInterval(id);
+  }, [running, set]);
+  const start = () => { if (done) { setSet(1); setRem(DURATION); setDone(false); } setRunning(true); };
+  const reset = () => { setRunning(false); setSet(1); setRem(DURATION); setDone(false); };
+  const mm = String(Math.floor(rem/60)).padStart(1,'0');
+  const ss = String(rem%60).padStart(2,'0');
+  const R=70, CIRC=2*Math.PI*R, prog=(DURATION-rem)/DURATION;
+  return (
+    <div style={{ width:'100%' }}>
+      <div style={{ padding:'18px 16px 16px', borderRadius:C.rLg, background:C.errorSoft, display:'flex', flexDirection:'column', alignItems:'center', gap:10 }}>
+
+        {/* 세트 인디케이터 */}
+        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+          <div style={{ display:'flex', gap:5 }}>
+            {Array.from({length:TOTAL}).map((_,i) => (
+              <div key={i} style={{
+                width: done||i<set ? 20 : 8,
+                height: 6,
+                borderRadius: C.rFull,
+                background: done||i<set ? C.textError : 'rgba(255,64,41,.2)',
+                transition: 'all .3s ease',
+              }}/>
+            ))}
+          </div>
+          <span style={{ fontSize:11.5, fontWeight:700, color:C.textError, letterSpacing:'.04em' }}>
+            {done ? `${TOTAL}세트 완료` : `${set} / ${TOTAL}세트`}
+          </span>
+        </div>
+
+        {/* 타이머 */}
+        <div style={{ position:'relative', width:156, height:156 }}>
+          <svg width="156" height="156" viewBox="0 0 168 168" style={{ transform:'rotate(-90deg)' }}>
+            <circle cx="84" cy="84" r={R} stroke={C.bgSurface} strokeWidth="10" fill="none"/>
+            <circle cx="84" cy="84" r={R} stroke={C.textError} strokeWidth="10" fill="none"
+              strokeLinecap="round" strokeDasharray={CIRC} strokeDashoffset={CIRC*(1-prog)}
+              style={{ transition:running?'stroke-dashoffset 1s linear':'none' }}/>
+          </svg>
+          <div style={{ position:'absolute', inset:0, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:2 }}>
+            <div style={{ fontSize:40, fontWeight:900, color:C.textError, letterSpacing:'-0.04em', lineHeight:1, fontVariantNumeric:'tabular-nums' }}>{mm}:{ss}</div>
+            <div style={{ fontSize:11, color:C.textSecondary, fontWeight:600 }}>
+              {done ? '완료' : running ? '진행 중' : '대기 중'}
+            </div>
+          </div>
+        </div>
+
+        {/* 수치 카드 */}
+        <div style={{ width:'100%', display:'grid', gridTemplateColumns:'1fr 1fr 1.7fr', gap:6, textAlign:'center' }}>
+          {[['압박:호흡','30 : 2'],['깊이','5cm'],['속도','100-120회/분']].map(([l,v]) => (
+            <div key={l} style={{ padding:'8px 4px', borderRadius:C.rSm, background:C.bgSurface, display:'flex', flexDirection:'column', gap:2, alignItems:'center' }}>
+              <span style={{ fontSize:10.5, color:C.textTertiary, fontWeight:600, whiteSpace:'nowrap' }}>{l}</span>
+              <span style={{ fontSize:13, color:C.textPrimary, fontWeight:800, letterSpacing:'-0.02em', whiteSpace:'nowrap' }}>{v}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* 타이머 버튼 — 채도 낮춘 레드 #E8624A */}
+        <div style={{ display:'flex', gap:8, width:'100%' }}>
+          {!running && !done && (
+            <button onClick={start} style={{
+              flex:1, height:48, borderRadius:C.rMd, border:'none', cursor:'pointer',
+              background:C.bgSurface, color:C.textError,
+              fontSize:15, fontWeight:700, letterSpacing:'-0.02em',
+              display:'inline-flex', alignItems:'center', justifyContent:'center', gap:8,
+              transition:'background .14s ease', fontFamily:'inherit',
+            }}
+              onMouseEnter={e=>e.currentTarget.style.background='#FFF2F0'}
+              onMouseLeave={e=>e.currentTarget.style.background=C.bgSurface}
+            >
+              타이머 시작
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke={C.textError} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </button>
+          )}
+          {running && (
+            <Button btnStyle="quaternary" size="md" fullWidth onClick={reset}
+              leftIcon={<svg width="14" height="14" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 3-6.2M4 4v6h6" stroke="#3A3F47" strokeWidth="2.2" strokeLinecap="round" fill="none"/></svg>}
+              rightIcon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+            >다시 시작</Button>
+          )}
+          {done && (
+            <Button btnStyle="quaternary" size="md" fullWidth onClick={reset}
+              leftIcon={<svg width="14" height="14" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 3-6.2M4 4v6h6" stroke="#3A3F47" strokeWidth="2.2" strokeLinecap="round" fill="none"/></svg>}
+              rightIcon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+            >다시 시작</Button>
+          )}
+        </div>
+
+      </div>
+    </div>
+  );
+}
+function RolesCard() {
+  return (
+    <div style={{ marginTop:12, padding:'14px', borderRadius:C.rMd, background:C.bgSurfaceSecondary }}>
+      <div style={{ fontSize:11.5, fontWeight:800, color:C.textError, letterSpacing:'.1em', marginBottom:8 }}>
+        역할 분담 <span style={{ fontSize:11.5, color:C.textTertiary, fontWeight:500, letterSpacing:0 }}>"검은 옷 입으신 분"처럼 콕 집어 부탁하세요</span>
+      </div>
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:6 }}>
+        {['심폐소생술 주도','119 신고','AED 확보','주변 공간 확보'].map((r, i) => (
+          <div key={i} style={{ display:'flex', alignItems:'center', gap:8, fontSize:13 }}>
+            <span style={{ flexShrink:0, width:18, height:18, borderRadius:C.rFull, background:C.bgSurface, display:'inline-flex', alignItems:'center', justifyContent:'center', fontSize:10.5, fontWeight:800 }}>{i+1}</span>
+            <span style={{ fontWeight:600, color:C.textPrimary }}>{r}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ─── Bottom Action ──────────────────────────────────────────── */
+function BottomAction({ screen, onAdvance, onClose, goTo }) {
+  if (screen.kind === 'intro') return null;
+  if (screen.kind === 'locations') return <div style={{ flexShrink:0, padding:'14px 20px 22px', background:C.bgSurface }} />;
+  if (screen.branches?.length)     return <div style={{ flexShrink:0, padding:'14px 20px 22px', background:C.bgSurface }} />;
+
+  const isLast = screen.id === 'step5';
+
+  return (
+    <div style={{ flexShrink:0, padding:'12px 20px 22px', background:C.bgSurface, borderTop:`1px solid ${C.borderSubtle}` }}>
+      {isLast ? (
+        <>
+          {/* 반복 안내 — 뉴트럴 배경. 파란 박스 제거해 하단 CTA 블루와 충돌 방지 */}
+          <div style={{ marginBottom:12, padding:'12px 14px', borderRadius:C.rMd, background:C.bgSurfaceSecondary, display:'flex', alignItems:'flex-start', gap:10 }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style={{ flexShrink:0, marginTop:1 }}>
+              <path d="M17 2l4 4-4 4" stroke={C.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M3 11V9a4 4 0 0 1 4-4h14" stroke={C.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M7 22l-4-4 4-4" stroke={C.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M21 13v2a4 4 0 0 1-4 4H3" stroke={C.textSecondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            <div>
+              <div style={{ fontSize:12.5, fontWeight:800, color:C.textPrimary }}>119 도착까지 반복하세요</div>
+              <div style={{ fontSize:12, color:C.textSecondary, marginTop:3, lineHeight:1.5 }}>
+                AED가 2분 후 다시 분석을 시작해요.<br/>분석 완료 후 음성에 따라 다음 단계를 이어가세요.
+              </div>
+            </div>
+          </div>
+          <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+            {/* 3. tertiary — '심폐소생술을 계속' 분기 카드와 동일한 소프트 블루 */}
+            <Button btnStyle="tertiary" size="lg" fullWidth onClick={() => goTo('step3')}
+              rightIcon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke={C.textBrand} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+            >AED 분석 단계로 돌아가기</Button>
+            {/* 4. 가이드 닫기 — 헤더 step 텍스트와 동일한 textSecondary(#5E6470), 배경 없음 */}
+            <button onClick={onClose} style={{
+              width:'100%', height:40, border:'none', background:'transparent', cursor:'pointer',
+              fontSize:14, fontWeight:600, color:C.textSecondary, letterSpacing:'-0.01em',
+              display:'inline-flex', alignItems:'center', justifyContent:'center', gap:6,
+              fontFamily:'inherit', transition:'color .14s',
+            }}
+              onMouseEnter={e=>e.currentTarget.style.color=C.textPrimary}
+              onMouseLeave={e=>e.currentTarget.style.color=C.textSecondary}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+              가이드 닫기
+            </button>
+          </div>
+        </>
+      ) : (
+        /* tertiary — 중간 중요도 */
+        <Button btnStyle="tertiary" size="lg" fullWidth onClick={onAdvance}
+          rightIcon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke={C.textBrand} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+        >{screen.cta || '다음'}</Button>
+      )}
+    </div>
+  );
+}
+
+/* ─── App Shell ──────────────────────────────────────────────── */
+function PhoneFrame({ children }) {
+  return (
+    <div style={{ width:375, height:812, borderRadius:44, background:'#000', padding:12, position:'relative', flex:'0 0 auto' }}>
+      <div style={{ position:'relative', width:'100%', height:'100%', borderRadius:32, overflow:'hidden', background:'#fff' }}>{children}</div>
+    </div>
+  );
+}
+
+function AppShell({ onOpenAED }) {
+  const tabs = ['정보','진행','팀','쿼터','리뷰'];
+  const rows = [
+    { label:'스크린',           badge:'중요' },
+    { label:'장비 위치' },
+    { label:'AI 팀 배정' },
+    { label:'구장 특이사항' },
+    { label:'AED 사용 가이드',  badge:'응급', highlight:true, onClick:onOpenAED },
+  ];
+  return (
+    <div style={{ width:'100%', height:'100%', display:'flex', flexDirection:'column', background:'#fff' }}>
+      <div style={{ background:'#0F1115', color:'#fff', padding:'14px 16px 16px' }}>
+        <div style={{ height:20, display:'flex', justifyContent:'space-between', fontSize:13, fontWeight:600, opacity:.85, marginBottom:8, alignItems:'center' }}>
+          <span>9:41</span>
+          <span style={{ width:16, height:10, borderRadius:2, border:'1px solid #fff', display:'inline-block' }}/>
+        </div>
+        <div style={{ display:'flex', alignItems:'center', gap:12, padding:'6px 0 4px' }}>
+          <span style={{ fontSize:22, fontWeight:700, opacity:.92 }}>‹</span>
+          <div style={{ flex:1, textAlign:'center', fontSize:17, fontWeight:700, letterSpacing:'-0.01em' }}>진행 중 매치</div>
+          <span style={{ width:22 }}/>
+        </div>
+      </div>
+      <div style={{ background:'#fff', padding:'14px 16px 4px', display:'flex', justifyContent:'flex-end', alignItems:'center', gap:10 }}>
+        <div style={{ padding:'7px 12px', background:'#F2F3F5', borderRadius:999, fontSize:12, color:'#3A3F47', fontWeight:500, display:'inline-flex', alignItems:'center', gap:6 }}>
+          기존 진행 페이지로 보기 <span style={{fontSize:10}}>↗</span>
+        </div>
+        <button onClick={onOpenAED} style={{ width:34, height:34, border:'none', background:'transparent', cursor:'pointer', padding:0 }}>
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+            <path d="M6 19h16v2a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1v-2Z" fill="#FF4029"/>
+            <path d="M8 19a6 6 0 1 1 12 0H8Z" fill="#FF6B57"/>
+            <circle cx="14" cy="14" r="2" fill="#fff"/>
+            <path d="M14 5v2M6 8l1.4 1.4M22 8l-1.4 1.4" stroke="#FF4029" strokeWidth="1.6" strokeLinecap="round"/>
+          </svg>
+        </button>
+      </div>
+      <div style={{ display:'flex', padding:'12px 8px 0', borderBottom:'1px solid #EDEEF1' }}>
+        {tabs.map((t, i) => (
+          <div key={t} style={{ flex:1, textAlign:'center', padding:'10px 0 14px', fontSize:15, fontWeight:i===0?700:500, color:i===0?'#111':'#9CA0A6', borderBottom:i===0?'2px solid #111':'2px solid transparent', marginBottom:-1 }}>{t}</div>
+        ))}
+      </div>
+      <div style={{ flex:1, overflow:'auto', padding:'14px 14px 22px' }}>
+        <div style={{ borderRadius:18, padding:18, background:'#fff', border:'1px solid #EDEEF1', marginBottom:14 }}>
+          <div style={{ fontSize:17, fontWeight:700, letterSpacing:'-0.01em', lineHeight:1.32 }}>플랩 스타디움 가산<br/>코오롱테크노밸리 1구장 (블랙)</div>
+          <div style={{ marginTop:10, color:'#6B7280', fontSize:12.5 }}>서울시 금천구 디지털로9길 56 코오롱테크노밸리 옥상</div>
+          <div style={{ marginTop:4, color:'#6B7280', fontSize:12.5 }}>2026년 4월 29일 (수) 21:00 — 23:00</div>
+          <div style={{ display:'flex', gap:6, marginTop:14, flexWrap:'wrap' }}>
+            {['6vs6 3파전','18/18명','모든 레벨','남녀 모두'].map(t => (
+              <span key={t} style={{ padding:'6px 10px', borderRadius:999, background:'#F4F5F7', color:'#3A3F47', fontSize:11.5, fontWeight:500 }}>{t}</span>
+            ))}
+          </div>
+          <button style={{ marginTop:14, width:'100%', height:46, borderRadius:12, background:'#1F75FE', color:'#fff', border:'none', fontSize:15, fontWeight:700, cursor:'pointer' }}>출발 체크</button>
+          <div style={{ margin:'10px auto 0', width:'fit-content', background:'#E4F75A', color:'#1B1F26', padding:'6px 12px', borderRadius:8, fontSize:11.5, fontWeight:600 }}>
+            매치 시작 1시간 전까지 체크
+          </div>
+        </div>
+        <div style={{ borderRadius:18, background:'#fff', border:'1px solid #EDEEF1', padding:'18px 18px 6px' }}>
+          <div style={{ fontSize:16, fontWeight:700, letterSpacing:'-0.01em', marginBottom:6 }}>매치 특이사항을 확인하세요</div>
+          {rows.map((r, i) => (
+            <div key={r.label} onClick={r.onClick} style={{ display:'flex', alignItems:'center', gap:14, padding:'14px 2px', borderTop:i===0?'1px solid transparent':'1px solid #EDEEF1', cursor:r.onClick?'pointer':'default' }}>
+              <span style={{ fontSize:14.5, fontWeight:600, color:'#111', flex:1 }}>{r.label}</span>
+              {r.badge && <span style={{ padding:'3px 7px', borderRadius:6, background:r.highlight?C.errorSoft:'#F0F1F3', color:r.highlight?C.textError:'#666', fontSize:11, fontWeight:700 }}>{r.badge}</span>}
+              <span style={{ color:'#C0C4CC', fontSize:14 }}>›</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  const [open, setOpen] = useState(true);
+  return (
+    <div style={{ display:'flex', gap:32, alignItems:'flex-start', flexWrap:'wrap', justifyContent:'center', maxWidth:1180, width:'100%' }}>
+      <PhoneFrame>
+        <AppShell onOpenAED={() => setOpen(true)}/>
+        {open && <AEDModal onClose={() => setOpen(false)}/>}
+      </PhoneFrame>
+      {/* 버튼 스타일 가이드 참조 패널 */}
+      <div style={{ flex:'1 1 260px', maxWidth:360, padding:'18px 4px' }}>
+        <div style={{ fontSize:11, letterSpacing:'.18em', fontWeight:700, color:'#9CA0A6', textTransform:'uppercase' }}>버튼 스타일 가이드</div>
+        <h2 style={{ margin:'6px 0 16px', fontSize:20, fontWeight:800, color:'#111' }}>중요도별 적용</h2>
+        {[
+          { name:'primary',    label:'높은 중요도', desc:'AED 분석 결과 확인 — 반드시 수행해야 할 액션',    en:{bg:'#1570FF',text:'#fff'}, pr:{bg:'#0A4EC4',text:'#fff'}, ds:{bg:'#C8D8FF',text:'rgba(255,255,255,.55)'} },
+          { name:'tertiary',   label:'중간 중요도', desc:'단계 이동 다음 버튼 — 수행을 기대하는 액션',       en:{bg:'#E8F1FF',text:'#1570FF'}, pr:{bg:'#AECBFF',text:'#0A4EC4'}, ds:{bg:'#F2F7FF',text:'#9BBDFF'} },
+          { name:'quaternary', label:'낮은 중요도', desc:'가이드 닫기 — 액션을 강조하지 않을 때',           en:{bg:'#F2F3F5',text:'#3A3F47'}, pr:{bg:'#B8BDC7',text:'#1A1A1A'}, ds:{bg:'#EAEBEC',text:'#9CA3AF'} },
+          { name:'negative',   label:'낮은 중요도', desc:'취소·경고 텍스트 — 비강조 부정 액션',             en:{bg:'transparent',text:'#FF4029',border:'none'}, pr:{bg:'#FFD8D3',text:'#E03520'}, ds:{bg:'transparent',text:'#FFBBAF'} },
+        ].map(({ name, label, desc, en, pr, ds }) => (
+          <div key={name} style={{ marginBottom:14 }}>
+            <div style={{ fontSize:12, fontWeight:700, color:'#111', marginBottom:4 }}>{name} <span style={{ fontSize:11, color:'#9CA0A6', fontWeight:500 }}>— {label}</span></div>
+            <div style={{ display:'flex', gap:6, marginBottom:5 }}>
+              {[{s:en,l:'enabled'},{s:pr,l:'pressed'},{s:ds,l:'disabled'}].map(({s,l}) => (
+                <div key={l} style={{ flex:1 }}>
+                  <div style={{ height:36, borderRadius:8, background:s.bg, border:s.border||'none', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                    <span style={{ fontSize:12, fontWeight:700, color:s.text }}>버튼</span>
+                  </div>
+                  <div style={{ fontSize:10, color:'#9CA0A6', textAlign:'center', marginTop:3 }}>{l}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ fontSize:11.5, color:'#6B7280', lineHeight:1.45 }}>{desc}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
